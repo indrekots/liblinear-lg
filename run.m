@@ -1,4 +1,5 @@
 addpath './liblinear/matlab';
+addpath './specfun/inst'
 
 function a = testIf(x)
      if x == 1
@@ -31,25 +32,28 @@ function a = testIf(x)
 
 %p = predict(y_test, sparse(X_test), model);
 
-data = load('data2.csv');
-X = data(:, [1, 2]);
-y = arrayfun(@testIf, data(:, 3));
-x_train = X(1:70, :);
-y_train = y(1:70);
-x_test = X(71:end, :);
-y_test = y(71:end);
+training_m = 5000;
+data = load('data.csv');
+X = data(:, 2:end);
+%X = data(:, 2:end);
+y = arrayfun(@testIf, data(:, 1));
+x_train = X(1:training_m, :);
+y_train = y(1:training_m);
+x_test = X(training_m + 1:end, :);
+y_test = y(training_m + 1:end);
 
 C = 1;
 B = 1;
-liblinear_options = cstrcat('-s 0', ' -B ', num2str(B), ' -c ', num2str(C));
+liblinear_options = cstrcat('-s 0 ', ' -B ', num2str(B), ' -c ', num2str(C), ' -q ');
 %liblinear_options = '-s 0 -B 1 -c 1';
 l_curve = [];
 
-for i = 1:70
-	x_iter = x_train(1:i, :);
-	y_iter = y_train(1:i);
+for i = 1:training_m/10
+	i
+	x_iter = x_train(1:i*10, :);
+	y_iter = y_train(1:i*10);
 	model = train(y_iter, sparse(x_iter), liblinear_options);
-	yt = lgCost(model.w, [x_iter, ones(i, 1)], y_iter, C);
+	yt = lgCost(model.w, [x_iter, ones(i*10, 1)], y_iter, C);
 	ycv = lgCost(model.w, [x_test, ones(size(x_test, 1), 1)], y_test, C);
 	
 	pt = mean(double(predict(y_iter, sparse(x_iter), model) == y_iter));
@@ -59,7 +63,7 @@ for i = 1:70
 end
 
 figure(1);
-plot(1:70, l_curve(:, 2), 'linewidth', 2, 1:70, l_curve(:, 3), 'linewidth', 2);
+plot(1:training_m/10, l_curve(:, 2), 'linewidth', 2, 1:training_m/10, l_curve(:, 3), 'linewidth', 2);
 title('Learning curve for linear regression')
 legend('Train', 'Cross Validation')
 xlabel('Number of training examples')
@@ -67,7 +71,7 @@ ylabel('Error')
 %axis([0 13 0 150])
 
 figure(2);
-plot(1:70, l_curve(:, 4), 'linewidth', 2, 1:70, l_curve(:, 5), 'linewidth', 2);
+plot(1:training_m/10, l_curve(:, 4), 'linewidth', 2, 1:training_m/10, l_curve(:, 5), 'linewidth', 2);
 title('Accuracy for linear regression')
 legend('Train', 'Cross Validation')
 xlabel('Number of training examples')
